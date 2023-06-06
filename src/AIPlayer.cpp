@@ -101,7 +101,7 @@ void AIPlayer::think(color &c_piece, int &id_piece, int &dice) const
         valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
         break;
     case 1:
-        // valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);
+        valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);
         break;
     case 2:
         // valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion2);
@@ -428,68 +428,88 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
     return valor;
 }
 
-/*
-using namespace std;
+double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
+{
+  const int gana = std::numeric_limits<double>::infinity();
+    const int pierde = -std::numeric_limits<double>::infinity();
 
-double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const {
-    std::stack<std::tuple<Parchis, int, int, int, double, double>> stack;
-    stack.push(std::make_tuple(actual, jugador, 0, -1, alpha, beta));
+    int ganador = estado.getWinner();
+    int oponente = (jugador + 1) % 2;
 
-    while (!stack.empty()) {
-        Parchis current = std::get<0>(stack.top());
-        int current_jugador = std::get<1>(stack.top());
-        int profundidad = std::get<2>(stack.top());
-        int k = std::get<3>(stack.top());
-        double current_alpha = std::get<4>(stack.top());
-        double current_beta = std::get<5>(stack.top());
-        stack.pop();
+    // If there is a winner, return infinity for the winning player and negative infinity for the opponent
+    if (ganador == jugador)
+    {
+        return gana;
+    }
+    else if (ganador == oponente)
+    {
+        return pierde;
+    }
+    else
+    {
+        double puntuacion_jugador = 0;
+        double puntuacion_oponente = 0;
 
-        if (profundidad == profundidad_max || current.gameOver()) {
-            return heuristic(current, current_jugador);
+        // Calculate the player's and opponent's progress towards the goal
+        std::vector<color> jugadorColors = estado.getPlayerColors(jugador);
+        std::vector<color> oponenteColors = estado.getPlayerColors(oponente);
+
+        int jugadorProgress = 0;
+        int oponenteProgress = 0;
+
+        for (const auto& color : jugadorColors) {
+            jugadorProgress += estado.piecesAtGoal(color);
         }
 
-        ParchisBros hijos = current.getChildren();
-        ParchisBros::Iterator it = hijos.begin();
-        ParchisBros::Iterator end = hijos.end();
-
-        if (k == -1) {
-            k = 0;
+        for (const auto& color : oponenteColors) {
+            oponenteProgress += estado.piecesAtGoal(color);
         }
 
-        if (current_alpha >= current_beta) {
-            continue;
-        }
+        // Evaluate the progress of the player's pieces
+        puntuacion_jugador += jugadorProgress * 10;
 
-        if (it != end) {
-            std::advance(it, k);
-            const Parchis &hijo = *it;
-            color child_color = it.getMovedColor();
-            int child_id = it.getMovedPieceId();
-            int child_dice = it.getMovedDiceValue();
+        // Evaluate the progress of the opponent's pieces
+        puntuacion_oponente += oponenteProgress * 10;
 
-            if (current.isEatingMove() || current.isGoalMove() || (current.gameOver() && current.getWinner() == current_jugador)) {
-                c_piece = child_color;
-                id_piece = child_id;
-                dice = child_dice;
-                return std::numeric_limits<double>::infinity();
-            }
-
-            double val = -heuristic(hijo, 1 - current_jugador);
-
-            if (val > current_alpha) {
-                current_alpha = val;
-                if (profundidad == 0) {
-                    c_piece = child_color;
-                    id_piece = child_id;
-                    dice = child_dice;
+        // Iterate through the player's pieces
+        for (color c : estado.getPlayerColors(jugador))
+        {
+            for (int j = 0; j < num_pieces; j++)
+            {
+                // Check if the piece is safe
+                if (estado.isSafePiece(c, j))
+                {
+                    // Increase the player's score for safe pieces
+                    puntuacion_jugador += 2;
+                }
+                else if (estado.getBoard().getPiece(c, j).get_box().type == goal)
+                {
+                    // Increase the player's score for pieces in the goal
+                    puntuacion_jugador += 5;
                 }
             }
-
-            stack.push(std::make_tuple(current, current_jugador, profundidad, k + 1, current_alpha, current_beta));
-            stack.push(std::make_tuple(hijo, 1 - current_jugador, profundidad + 1, -1, -current_beta, -current_alpha));
         }
-    }
 
-    return alpha;
+        // Iterate through the opponent's pieces
+        for (color c : estado.getPlayerColors(oponente))
+        {
+            for (int j = 0; j < num_pieces; j++)
+            {
+                // Check if the piece is safe
+                if (estado.isSafePiece(c, j))
+                {
+                    // Increase the opponent's score for safe pieces
+                    puntuacion_oponente += 2;
+                }
+                else if (estado.getBoard().getPiece(c, j).get_box().type == goal)
+                {
+                    // Increase the opponent's score for pieces in the goal
+                    puntuacion_oponente += 5;
+                }
+            }
+        }
+
+        // Return the difference in scores between the player and the opponent
+        return puntuacion_jugador - puntuacion_oponente;
+    }
 }
-*/
