@@ -1,5 +1,8 @@
 #include "AIPlayer.h"
 #include "Parchis.h"
+#include <stack>
+#include <tuple>
+#include <limits>
 
 const double masinf = 9999999999.0, menosinf = -9999999999.0;
 const double gana = masinf - 1, pierde = menosinf + 1;
@@ -81,10 +84,9 @@ void AIPlayer::think(color &c_piece, int &id_piece, int &dice) const
         break;
     }
 
-    
     // El siguiente código se proporciona como sugerencia para iniciar la implementación del agente.
 
-    double valor; // Almacena el valor con el que se etiqueta el estado tras el proceso de busqueda.
+    double valor;                           // Almacena el valor con el que se etiqueta el estado tras el proceso de busqueda.
     double alpha = menosinf, beta = masinf; // Cotas iniciales de la poda AlfaBeta
     // Llamada a la función para la poda (los parámetros son solo una sugerencia, se pueden modificar).
     valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
@@ -93,20 +95,19 @@ void AIPlayer::think(color &c_piece, int &id_piece, int &dice) const
     // ----------------------------------------------------------------- //
 
     // Si quiero poder manejar varias heurísticas, puedo usar la variable id del agente para usar una u otra.
-    switch(id){
-        case 0:
-            valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
-            break;
-        case 1:
-            //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);
-            break;
-        case 2:
-            //valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion2);
-            break;
+    switch (id)
+    {
+    case 0:
+        valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, ValoracionTest);
+        break;
+    case 1:
+        // valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion1);
+        break;
+    case 2:
+        // valor = Poda_AlfaBeta(*actual, jugador, 0, PROFUNDIDAD_ALFABETA, c_piece, id_piece, dice, alpha, beta, MiValoracion2);
+        break;
     }
     cout << "Valor MiniMax: " << valor << "  Accion: " << str(c_piece) << " " << id_piece << " " << dice << endl;
-
-    
 }
 
 void AIPlayer::thinkAleatorio(color &c_piece, int &id_piece, int &dice) const
@@ -354,5 +355,141 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
 }
 
 double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const{
-    
+
+    double valor;
+    double aux_valor;
+    bool esMax = (actual.getCurrentPlayerId() == jugador);
+
+    bool podado = false;
+
+    if (actual.getCurrentPlayerId() == jugador){
+        esMax = true;
+    }
+
+    // variables auxiliares para realizar la busqueda de todos los nodos sucesores
+
+    color c_piece_aux = none;
+    int id_piece_aux = -1;
+    int dice_aux = -1;
+
+    ParchisBros hijos = actual.getChildren();
+
+    if (profundidad < profundidad_max && !actual.gameOver()){
+        for (const auto &hijo : hijos){
+
+            // variables auxiliares para realizar la busqueda en los nodos sucesores
+
+            color c_piece_aux2 = none;
+            int id_piece_aux2 = -1;
+            int dice_aux2 = -1;
+
+            aux_valor = Poda_AlfaBeta(hijo, jugador, profundidad + 1, PROFUNDIDAD_ALFABETA, c_piece_aux2, id_piece_aux2, dice_aux2, alpha, beta, heuristic);
+
+            if (esMax){
+                if (aux_valor > alpha){
+
+                    valor = aux_valor;
+
+                    if (profundidad == 0){
+                        const auto &last_action = actual.getLastAction();
+                        c_piece = std::get<0>(last_action);
+                        id_piece = std::get<1>(last_action);
+                        dice = std::get<2>(last_action);
+                    }
+
+                    alpha = valor;
+                    if (alpha >= beta){
+                        podado = true;
+                    }
+                }
+            } else if (aux_valor < beta){
+
+                valor = aux_valor;
+
+                if (profundidad == 0)
+                {
+                    const auto &last_action = actual.getLastAction();
+                    c_piece = std::get<0>(last_action);
+                    id_piece = std::get<1>(last_action);
+                    dice = std::get<2>(last_action);
+                }
+
+                beta = valor;
+                if (alpha >= beta){
+                    podado = true;
+                }
+            }
+        }
+    } else {
+
+        valor = heuristic(actual, jugador);
+    }
+
+    return valor;
 }
+
+/*
+using namespace std;
+
+double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const {
+    std::stack<std::tuple<Parchis, int, int, int, double, double>> stack;
+    stack.push(std::make_tuple(actual, jugador, 0, -1, alpha, beta));
+
+    while (!stack.empty()) {
+        Parchis current = std::get<0>(stack.top());
+        int current_jugador = std::get<1>(stack.top());
+        int profundidad = std::get<2>(stack.top());
+        int k = std::get<3>(stack.top());
+        double current_alpha = std::get<4>(stack.top());
+        double current_beta = std::get<5>(stack.top());
+        stack.pop();
+
+        if (profundidad == profundidad_max || current.gameOver()) {
+            return heuristic(current, current_jugador);
+        }
+
+        ParchisBros hijos = current.getChildren();
+        ParchisBros::Iterator it = hijos.begin();
+        ParchisBros::Iterator end = hijos.end();
+
+        if (k == -1) {
+            k = 0;
+        }
+
+        if (current_alpha >= current_beta) {
+            continue;
+        }
+
+        if (it != end) {
+            std::advance(it, k);
+            const Parchis &hijo = *it;
+            color child_color = it.getMovedColor();
+            int child_id = it.getMovedPieceId();
+            int child_dice = it.getMovedDiceValue();
+
+            if (current.isEatingMove() || current.isGoalMove() || (current.gameOver() && current.getWinner() == current_jugador)) {
+                c_piece = child_color;
+                id_piece = child_id;
+                dice = child_dice;
+                return std::numeric_limits<double>::infinity();
+            }
+
+            double val = -heuristic(hijo, 1 - current_jugador);
+
+            if (val > current_alpha) {
+                current_alpha = val;
+                if (profundidad == 0) {
+                    c_piece = child_color;
+                    id_piece = child_id;
+                    dice = child_dice;
+                }
+            }
+
+            stack.push(std::make_tuple(current, current_jugador, profundidad, k + 1, current_alpha, current_beta));
+            stack.push(std::make_tuple(hijo, 1 - current_jugador, profundidad + 1, -1, -current_beta, -current_alpha));
+        }
+    }
+
+    return alpha;
+}
+*/
