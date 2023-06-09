@@ -354,7 +354,7 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
     }
 }
 
-double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristic)(const Parchis &, int)) const{
+double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristica)(const Parchis &, int)) const{
 
     double valor;
     double aux_valor;
@@ -383,7 +383,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
             int id_piece_aux2 = -1;
             int dice_aux2 = -1;
 
-            aux_valor = Poda_AlfaBeta(hijo, jugador, profundidad + 1, PROFUNDIDAD_ALFABETA, c_piece_aux2, id_piece_aux2, dice_aux2, alpha, beta, heuristic);
+            aux_valor = Poda_AlfaBeta(hijo, jugador, profundidad + 1, PROFUNDIDAD_ALFABETA, c_piece_aux2, id_piece_aux2, dice_aux2, alpha, beta, heuristica);
 
             if (esMax){
                 if (aux_valor > alpha){
@@ -422,7 +422,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
         }
     } else {
 
-        valor = heuristic(actual, jugador);
+        valor = heuristica(actual, jugador);
     }
 
     return valor;
@@ -464,9 +464,70 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
                 {
                     puntuacion_jugador++;
                 }
+                // Valoro negativamente  
+                else if (estado.getBoard().getPiece(c, j).get_box().type == home)
+                {
+                    puntuacion_jugador -= 5;
+                }
+                else if (estado.getBoard().getPiece(c, j).get_box().type == normal)
+                {
+                    puntuacion_jugador += 1;
+                }
+                else if (estado.getBoard().getPiece(c, j).get_box().type == final_queue)
+                {
+                    puntuacion_jugador += 2;
+                }
                 else if (estado.getBoard().getPiece(c, j).get_box().type == goal)
                 {
                     puntuacion_jugador += 5;
+                }
+                else if(estado.isEatingMove())
+                {
+                    puntuacion_jugador += 10;
+                }
+                else if (estado.isGoalMove())
+                {
+                    puntuacion_jugador += 20;
+                }
+                else if(estado.isBananaMove())
+                {
+                    puntuacion_jugador += 30;
+                }
+                else if (estado.isMushroomMove())
+                {
+                    puntuacion_jugador += 40;
+                }
+                else if (estado.isRedShellMove())
+                {
+                    puntuacion_jugador += 50;
+                }
+                else if (estado.isBlueShellMove())
+                {
+                    puntuacion_jugador += 60;
+                }
+                else if (estado.isHornMove())
+                {
+                    puntuacion_jugador += 70;
+                }
+                else if (estado.isBulletMove())
+                {
+                    puntuacion_jugador += 80;
+                }
+                else if (estado.isShockMove())
+                {
+                    puntuacion_jugador += 90;
+                }
+                else if (estado.isBooMove())
+                {
+                    puntuacion_jugador += 100;
+                }
+                else if (estado.isStarMove())
+                {
+                    puntuacion_jugador += 110;
+                }
+                else if (estado.isMegaMushroomMove())
+                {
+                    puntuacion_jugador += 120;
                 }
             }
         }
@@ -485,9 +546,69 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
                     // Valoro negativamente que la ficha esté en casilla segura o meta.
                     puntuacion_oponente++;
                 }
+                else if (estado.getBoard().getPiece(c, j).get_box().type == home)
+                {
+                    puntuacion_oponente -= 5;
+                }
+                else if (estado.getBoard().getPiece(c, j).get_box().type == normal)
+                {
+                    puntuacion_oponente += 1;
+                }
+                else if (estado.getBoard().getPiece(c, j).get_box().type == final_queue)
+                {
+                    puntuacion_oponente += 2;
+                }
                 else if (estado.getBoard().getPiece(c, j).get_box().type == goal)
                 {
                     puntuacion_oponente += 5;
+                }
+                else if (estado.isEatingMove())
+                {
+                    puntuacion_oponente += 10;
+                }
+                else if (estado.isGoalMove())
+                {
+                    puntuacion_oponente += 20;
+                }
+                else if (estado.isBananaMove())
+                {
+                    puntuacion_oponente += 30;
+                }
+                else if (estado.isMushroomMove())
+                {
+                    puntuacion_oponente += 40;
+                }
+                else if (estado.isRedShellMove())
+                {
+                    puntuacion_oponente += 50;
+                }
+                else if (estado.isBlueShellMove())
+                {
+                    puntuacion_oponente += 60;
+                }
+                else if (estado.isHornMove())
+                {
+                    puntuacion_oponente += 70;
+                }
+                else if (estado.isBulletMove())
+                {
+                    puntuacion_oponente += 80;
+                }
+                else if (estado.isShockMove())
+                {
+                    puntuacion_oponente += 90;
+                }
+                else if (estado.isBooMove())
+                {
+                    puntuacion_oponente += 100;
+                }
+                else if (estado.isStarMove())
+                {
+                    puntuacion_oponente += 110;
+                }
+                else if (estado.isMegaMushroomMove())
+                {
+                    puntuacion_oponente += 120;
                 }
             }
         }
