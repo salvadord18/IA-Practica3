@@ -430,13 +430,12 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
 
 double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
 {
-  const int gana = std::numeric_limits<double>::infinity();
-    const int pierde = -std::numeric_limits<double>::infinity();
+    // Heurística de prueba proporcionada para validar el funcionamiento del algoritmo de búsqueda.
 
     int ganador = estado.getWinner();
     int oponente = (jugador + 1) % 2;
 
-    // If there is a winner, return infinity for the winning player and negative infinity for the opponent
+    // Si hay un ganador, devuelvo más/menos infinito, según si he ganado yo o el oponente.
     if (ganador == jugador)
     {
         return gana;
@@ -447,69 +446,53 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
     }
     else
     {
-        double puntuacion_jugador = 0;
-        double puntuacion_oponente = 0;
+        // Colores que juega mi jugador y colores del oponente
+        vector<color> my_colors = estado.getPlayerColors(jugador);
+        vector<color> op_colors = estado.getPlayerColors(oponente);
 
-        // Calculate the player's and opponent's progress towards the goal
-        std::vector<color> jugadorColors = estado.getPlayerColors(jugador);
-        std::vector<color> oponenteColors = estado.getPlayerColors(oponente);
-
-        int jugadorProgress = 0;
-        int oponenteProgress = 0;
-
-        for (const auto& color : jugadorColors) {
-            jugadorProgress += estado.piecesAtGoal(color);
-        }
-
-        for (const auto& color : oponenteColors) {
-            oponenteProgress += estado.piecesAtGoal(color);
-        }
-
-        // Evaluate the progress of the player's pieces
-        puntuacion_jugador += jugadorProgress * 10;
-
-        // Evaluate the progress of the opponent's pieces
-        puntuacion_oponente += oponenteProgress * 10;
-
-        // Iterate through the player's pieces
-        for (color c : estado.getPlayerColors(jugador))
+        // Recorro todas las fichas de mi jugador
+        int puntuacion_jugador = 0;
+        // Recorro colores de mi jugador.
+        for (int i = 0; i < my_colors.size(); i++)
         {
+            color c = my_colors[i];
+            // Recorro las fichas de ese color.
             for (int j = 0; j < num_pieces; j++)
             {
-                // Check if the piece is safe
+                // Valoro positivamente que la ficha esté en casilla segura o meta.
                 if (estado.isSafePiece(c, j))
                 {
-                    // Increase the player's score for safe pieces
-                    puntuacion_jugador += 2;
+                    puntuacion_jugador++;
                 }
                 else if (estado.getBoard().getPiece(c, j).get_box().type == goal)
                 {
-                    // Increase the player's score for pieces in the goal
                     puntuacion_jugador += 5;
                 }
             }
         }
 
-        // Iterate through the opponent's pieces
-        for (color c : estado.getPlayerColors(oponente))
+        // Recorro todas las fichas del oponente
+        int puntuacion_oponente = 0;
+        // Recorro colores del oponente.
+        for (int i = 0; i < op_colors.size(); i++)
         {
+            color c = op_colors[i];
+            // Recorro las fichas de ese color.
             for (int j = 0; j < num_pieces; j++)
             {
-                // Check if the piece is safe
                 if (estado.isSafePiece(c, j))
                 {
-                    // Increase the opponent's score for safe pieces
-                    puntuacion_oponente += 2;
+                    // Valoro negativamente que la ficha esté en casilla segura o meta.
+                    puntuacion_oponente++;
                 }
                 else if (estado.getBoard().getPiece(c, j).get_box().type == goal)
                 {
-                    // Increase the opponent's score for pieces in the goal
                     puntuacion_oponente += 5;
                 }
             }
         }
 
-        // Return the difference in scores between the player and the opponent
+        // Devuelvo la puntuación de mi jugador menos la puntuación del oponente.
         return puntuacion_jugador - puntuacion_oponente;
     }
 }
