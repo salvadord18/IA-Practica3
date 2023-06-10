@@ -78,6 +78,7 @@ public:
      */
     static double ValoracionTest(const Parchis &estado, int jugador);
     static double MiValoracion1(const Parchis &estado, int jugador);
+    static double MiValoracion2(const Parchis &estado, int jugador);
 
     /**
      * @brief Propuesta de declaración de la función poda alfa-beta.
