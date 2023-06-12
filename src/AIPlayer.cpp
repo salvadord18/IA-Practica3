@@ -289,9 +289,6 @@ void AIPlayer::thinkMejorOpcion(color &c_piece, int &id_piece, int &dice) const
 double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristica)(const Parchis &, int)) const
 {
     double valor;
-    double aux_valor;
-    bool esMax = false;
-    bool podado = false;
 
     if (profundidad == profundidad_max || actual.gameOver())
     {
@@ -310,7 +307,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
             {
                 alpha = valor;
 
-                // Al llegar a la profundidad 0, guardo los valores del mejor movimiento
+                // Guardo los valores del mejor movimiento
                 if (profundidad == 0)
                 {
                     c_piece = it.getMovedColor();
@@ -325,7 +322,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
             }
         }
 
-        // Devuelvo el mejor valor encontrado
+        // Retorno el mejor valor encontrado
         return alpha;
     }
 
@@ -346,7 +343,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
             }
         }
 
-        // Devuelvo el mejor valor encontrado
+        // Retorno el mejor valor encontrado
         return beta;
     }
 }
@@ -420,10 +417,8 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
     }
 }
 
-double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
+double AIPlayer::MiValoracion1(const Parchis& estado, int jugador)
 {
-    // Heurística de prueba proporcionada para validar el funcionamiento del algoritmo de búsqueda.
-
     int ganador = estado.getWinner();
     int oponente = (jugador + 1) % 2;
 
@@ -439,207 +434,179 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
     else
     {
         // Colores que juega mi jugador y colores del oponente
-        vector<color> my_colors = estado.getPlayerColors(jugador);
-        vector<color> op_colors = estado.getPlayerColors(oponente);
+        const vector<color>& my_colors = estado.getPlayerColors(jugador);
+        const vector<color>& op_colors = estado.getPlayerColors(oponente);
 
         // Recorro todas las fichas de mi jugador
         int puntuacion_jugador = 0;
-        int dtg = 0;
 
         // Recorro colores de mi jugador.
-        for (int i = 0; i < my_colors.size(); i++)
+        for (const color& c : my_colors)
         {
-            color c = my_colors[i];
             // Recorro las fichas de ese color.
             for (int j = 0; j < num_pieces; j++)
             {
+                const Piece& piece = estado.getBoard().getPiece(c, j);
+                const Box& box = piece.get_box();
+
                 // Valoro positivamente que la ficha esté en casilla segura o meta.
                 if (estado.isSafePiece(c, j))
                 {
-                    puntuacion_jugador++;
+                    puntuacion_jugador += 10;
                 }
                 // Valoro negativamente si la ficha está en la casilla de inicio.
-                else if (estado.getBoard().getPiece(c, j).get_box().type == home)
+                else if (box.type == home)
                 {
-                    puntuacion_jugador -= 5;
+                    puntuacion_jugador -= 10;
                 }
                 // Valoro positivamente si la ficha está en una casilla normal.
-                else if (estado.getBoard().getPiece(c, j).get_box().type == normal)
+                else if (box.type == normal)
                 {
-                    puntuacion_jugador += 1;
+                    puntuacion_jugador += 2;
                 }
                 // Valoro positivamente si la ficha está en una casilla del pasillo final hacia la meta.
-                else if (estado.getBoard().getPiece(c, j).get_box().type == final_queue)
-                {
-                    puntuacion_jugador += 3;
-                }
-                // Valoro positivamente si la ficha está la casilla destino o meta.
-                else if (estado.getBoard().getPiece(c, j).get_box().type == goal)
+                else if (box.type == final_queue)
                 {
                     puntuacion_jugador += 5;
                 }
-                // Valoro positivamente si es un movimiento para comer alguna ficha.
-                else if (estado.isEatingMove())
-                {
-                    puntuacion_jugador += 10;
-                }
-                // Valoro positivamente si es un movimiento para llegar al destino.
-                else if (estado.isGoalMove())
+                // Valoro positivamente si la ficha está la casilla destino o meta.
+                else if (box.type == goal)
                 {
                     puntuacion_jugador += 20;
                 }
-                // Valoro positivamente si es un movimiento con el dado especial Plátano.
-                else if (estado.isBananaMove())
-                {
-                    puntuacion_jugador += 15;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Champiñón.
-                else if (estado.isMushroomMove())
-                {
-                    puntuacion_jugador += 25;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Caparazón rojo.
-                else if (estado.isRedShellMove())
-                {
-                    puntuacion_jugador += 30;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Caparazón azul.
-                else if (estado.isBlueShellMove())
-                {
-                    puntuacion_jugador += 35;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Bocina.
-                else if (estado.isHornMove())
-                {
-                    puntuacion_jugador += 40;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Bala.
-                else if (estado.isBulletMove())
-                {
-                    puntuacion_jugador += 45;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Rayo.
-                else if (estado.isShockMove())
-                {
-                    puntuacion_jugador += 50;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Boo.
-                else if (estado.isBooMove())
-                {
-                    puntuacion_jugador += 55;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Estrella.
-                else if (estado.isStarMove())
-                {
-                    puntuacion_jugador += 60;
-                }
-                // Valoro positivamente si es un movimiento con el dado especial Megachampiñón.
-                else if (estado.isMegaMushroomMove())
-                {
-                    puntuacion_jugador += 65;
-                }
-                dtg += 100 - estado.distanceToGoal(c, j);
+
+                // Incremento la puntuación teniendo en cuenta la distancia al objetivo
+                int distancia = estado.distanceToGoal(c, j);
+                puntuacion_jugador += 100 - distancia;
             }
-            puntuacion_jugador += dtg;
+        }
+
+        // Incremento la puntuación teniendo en cuenta los dados especiales
+        if (estado.isBananaMove())
+        {
+            puntuacion_jugador += 15;
+        }
+        if (estado.isMushroomMove())
+        {
+            puntuacion_jugador += 25;
+        }
+        if (estado.isRedShellMove())
+        {
+            puntuacion_jugador += 30;
+        }
+        if (estado.isBlueShellMove())
+        {
+            puntuacion_jugador += 35;
+        }
+        if (estado.isHornMove())
+        {
+            puntuacion_jugador += 40;
+        }
+        if (estado.isBulletMove())
+        {
+            puntuacion_jugador += 45;
+        }
+        if (estado.isShockMove())
+        {
+            puntuacion_jugador += 50;
+        }
+        if (estado.isBooMove())
+        {
+            puntuacion_jugador += 55;
+        }
+        if (estado.isStarMove())
+        {
+            puntuacion_jugador += 60;
+        }
+        if (estado.isMegaMushroomMove())
+        {
+            puntuacion_jugador += 65;
         }
 
         // Recorro todas las fichas del oponente
         int puntuacion_oponente = 0;
+
         // Recorro colores del oponente.
-        for (int i = 0; i < op_colors.size(); i++)
+        for (const color& c : op_colors)
         {
-            color c = op_colors[i];
             // Recorro las fichas de ese color.
             for (int j = 0; j < num_pieces; j++)
             {
+                const Piece& piece = estado.getBoard().getPiece(c, j);
+                const Box& box = piece.get_box();
+
                 // Valoro negativamente que la ficha esté en casilla segura o meta.
                 if (estado.isSafePiece(c, j))
                 {
-                    puntuacion_oponente++;
+                    puntuacion_oponente += 10;
                 }
                 // Valoro positivamente si la ficha está en la casilla de inicio.
-                else if (estado.getBoard().getPiece(c, j).get_box().type == home)
+                else if (box.type == home)
                 {
-                    puntuacion_oponente -= 5;
+                    puntuacion_oponente -= 10;
                 }
                 // Valoro negativamente si la ficha está en una casilla normal.
-                else if (estado.getBoard().getPiece(c, j).get_box().type == normal)
+                else if (box.type == normal)
                 {
-                    puntuacion_oponente += 1;
+                    puntuacion_oponente += 2;
                 }
                 // Valoro negativamente si la ficha está en una casilla del pasillo final hacia la meta.
-                else if (estado.getBoard().getPiece(c, j).get_box().type == final_queue)
-                {
-                    puntuacion_oponente += 3;
-                }
-                // Valoro negativamente si la ficha está la casilla destino o meta.
-                else if (estado.getBoard().getPiece(c, j).get_box().type == goal)
+                else if (box.type == final_queue)
                 {
                     puntuacion_oponente += 5;
                 }
-                // Valoro negativamente si es un movimiento para comer alguna ficha.
-                else if (estado.isEatingMove())
-                {
-                    puntuacion_oponente += 10;
-                }
-                // Valoro negativamente si es un movimiento para llegar al destino.
-                else if (estado.isGoalMove())
+                // Valoro negativamente si la ficha está la casilla destino o meta.
+                else if (box.type == goal)
                 {
                     puntuacion_oponente += 20;
                 }
-                // Valoro negativamente si es un movimiento con el dado especial Plátano.
-                else if (estado.isBananaMove())
-                {
-                    puntuacion_oponente += 15;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Champiñón.
-                else if (estado.isMushroomMove())
-                {
-                    puntuacion_oponente += 25;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Caparazón rojo.
-                else if (estado.isRedShellMove())
-                {
-                    puntuacion_oponente += 30;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Caparazón azul.
-                else if (estado.isBlueShellMove())
-                {
-                    puntuacion_oponente += 35;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Bocina.
-                else if (estado.isHornMove())
-                {
-                    puntuacion_oponente += 40;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Bala.
-                else if (estado.isBulletMove())
-                {
-                    puntuacion_oponente += 45;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Rayo.
-                else if (estado.isShockMove())
-                {
-                    puntuacion_oponente += 50;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Boo.
-                else if (estado.isBooMove())
-                {
-                    puntuacion_oponente += 55;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Estrella.
-                else if (estado.isStarMove())
-                {
-                    puntuacion_oponente += 60;
-                }
-                // Valoro negativamente si es un movimiento con el dado especial Megachampiñón.
-                else if (estado.isMegaMushroomMove())
-                {
-                    puntuacion_oponente += 65;
-                }
-                dtg += 100 - estado.distanceToGoal(c, j);
+
+                // Incremento la puntuación teniendo en cuenta la distancia al objetivo
+                int distancia = estado.distanceToGoal(c, j);
+                puntuacion_oponente += 100 - distancia;
             }
-            puntuacion_oponente += dtg;
+        }
+
+        // Incremento la puntuación teniendo en cuenta los dados especiales
+        if (estado.isBananaMove())
+        {
+            puntuacion_oponente += 15;
+        }
+        if (estado.isMushroomMove())
+        {
+            puntuacion_oponente += 25;
+        }
+        if (estado.isRedShellMove())
+        {
+            puntuacion_oponente += 30;
+        }
+        if (estado.isBlueShellMove())
+        {
+            puntuacion_oponente += 35;
+        }
+        if (estado.isHornMove())
+        {
+            puntuacion_oponente += 40;
+        }
+        if (estado.isBulletMove())
+        {
+            puntuacion_oponente += 45;
+        }
+        if (estado.isShockMove())
+        {
+            puntuacion_oponente += 50;
+        }
+        if (estado.isBooMove())
+        {
+            puntuacion_oponente += 55;
+        }
+        if (estado.isStarMove())
+        {
+            puntuacion_oponente += 60;
+        }
+        if (estado.isMegaMushroomMove())
+        {
+            puntuacion_oponente += 65;
         }
 
         // Devuelvo la puntuación de mi jugador menos la puntuación del oponente.
@@ -647,10 +614,8 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
     }
 }
 
-double AIPlayer::MiValoracion2(const Parchis &estado, int jugador)
+double AIPlayer::MiValoracion2(const Parchis& estado, int jugador)
 {
-    // Heurística de prueba proporcionada para validar el funcionamiento del algoritmo de búsqueda.
-
     int ganador = estado.getWinner();
     int oponente = (jugador + 1) % 2;
 
@@ -666,37 +631,83 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador)
     else
     {
         // Colores que juega mi jugador y colores del oponente
-        vector<color> my_colors = estado.getPlayerColors(jugador);
-        vector<color> op_colors = estado.getPlayerColors(oponente);
+        const vector<color>& my_colors = estado.getPlayerColors(jugador);
+        const vector<color>& op_colors = estado.getPlayerColors(oponente);
 
-        // Recorro todas las fichas de mi jugador
+        
         int puntuacion_jugador = 0;
-        int dtg = 0;
 
         // Recorro colores de mi jugador.
-        for (int i = 0; i < my_colors.size(); i++)
+        for (const color& c : my_colors)
         {
-            color c = my_colors[i];
             // Recorro las fichas de ese color.
             for (int j = 0; j < num_pieces; j++)
             {
-                dtg += 100 - estado.distanceToGoal(c, j);
+                const Piece& piece = estado.getBoard().getPiece(c, j);
+                const Box& box = piece.get_box();
+
+                if (estado.isSafePiece(c, j))
+                {
+                    puntuacion_jugador += 10;
+                }
+                else if (box.type == home)
+                {
+                    puntuacion_jugador -= 10;
+                }
+                else if (box.type == normal)
+                {
+                    puntuacion_jugador += 2;
+                }
+                else if (box.type == final_queue)
+                {
+                    puntuacion_jugador += 5;
+                }
+                else if (box.type == goal)
+                {
+                    puntuacion_jugador += 20;
+                }
+
+                int distancia = estado.distanceToGoal(c, j);
+                puntuacion_jugador += 100 - distancia;
             }
-            puntuacion_jugador += dtg;
         }
 
         // Recorro todas las fichas del oponente
         int puntuacion_oponente = 0;
+
         // Recorro colores del oponente.
-        for (int i = 0; i < op_colors.size(); i++)
+        for (const color& c : op_colors)
         {
-            color c = op_colors[i];
             // Recorro las fichas de ese color.
             for (int j = 0; j < num_pieces; j++)
             {
-                dtg += 100 - estado.distanceToGoal(c, j);
+                const Piece& piece = estado.getBoard().getPiece(c, j);
+                const Box& box = piece.get_box();
+
+                if (estado.isSafePiece(c, j))
+                {
+                    puntuacion_oponente += 10;
+                }
+                else if (box.type == home)
+                {
+                    puntuacion_oponente -= 10;
+                }
+                else if (box.type == normal)
+                {
+                    puntuacion_oponente += 2;
+                }
+                else if (box.type == final_queue)
+                {
+                    puntuacion_oponente += 5;
+                }
+                else if (box.type == goal)
+                {
+                    puntuacion_oponente += 20;
+                }
+
+                int distancia = estado.distanceToGoal(c, j);
+                puntuacion_oponente += 100 - distancia;
             }
-            puntuacion_oponente += dtg;
         }
 
         // Devuelvo la puntuación de mi jugador menos la puntuación del oponente.
