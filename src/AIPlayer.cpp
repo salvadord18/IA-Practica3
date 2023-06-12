@@ -355,6 +355,7 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
     }
 }
 
+/*
 double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristica)(const Parchis &, int)) const
 {
     if (profundidad == profundidad_max || actual.gameOver())
@@ -388,6 +389,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
             {
                 break;
             }
+            valor = heuristica(actual, jugador);
         }
         else
         {
@@ -403,11 +405,12 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
             {
                 break;
             }
+            valor = -heuristica(actual, jugador);
         }
     }
 
     return valor;
-}
+}*/
 
 /*
 double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristica)(const Parchis &, int)) const
@@ -866,6 +869,91 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
 }
 */
 
+double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristica)(const Parchis &, int)) const
+{
+    double valor;
+    double aux_valor;
+    bool esMax = false;
+    bool podado = false;
+
+    if (actual.getCurrentPlayerId() == jugador)
+    {
+        esMax = true;
+    }
+
+    color c_piece_aux = c_piece;
+    int id_piece_aux = id_piece;
+    int dice_aux = dice;
+
+    ParchisBros hijos = actual.getChildren();
+
+    if (profundidad < profundidad_max && !actual.gameOver())
+    {
+        for (const auto &hijo : hijos)
+        {
+            if (!podado)
+            {
+
+                aux_valor = Poda_AlfaBeta(hijo, jugador, profundidad + 1, profundidad_max, c_piece_aux, id_piece_aux, dice_aux, alpha, beta, heuristica);
+
+                if (esMax)
+                {
+                    if (aux_valor > alpha)
+                    {
+
+                        valor = aux_valor;
+
+                        if (profundidad == 0)
+                        {
+                            c_piece = c_piece_aux;
+                            id_piece = id_piece_aux;
+                            dice = dice_aux;
+                        }
+
+                        alpha = valor;
+                        if (alpha >= beta)
+                        {
+                            podado = true;
+                        }
+                    }
+                }
+                else if (aux_valor < beta)
+                {
+
+                    valor = aux_valor;
+
+                    if (profundidad == 0)
+                    {
+                        c_piece = c_piece_aux;
+                        id_piece = id_piece_aux;
+                        dice = dice_aux;
+                    }
+
+                    beta = valor;
+                    if (alpha >= beta)
+                    {
+                        podado = true;
+                    }
+                }
+            }
+        }
+        if (esMax)
+        {
+            valor = alpha;
+        }
+        else
+        {
+            valor = beta;
+        }
+    }
+    else
+    {
+        valor = heuristica(actual, jugador);
+    }
+
+    return valor;
+}
+
 double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
 {
     // Heurística de prueba proporcionada para validar el funcionamiento del algoritmo de búsqueda.
@@ -890,6 +978,8 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
 
         // Recorro todas las fichas de mi jugador
         int puntuacion_jugador = 0;
+        int dtg = 0;
+
         // Recorro colores de mi jugador.
         for (int i = 0; i < my_colors.size(); i++)
         {
@@ -982,7 +1072,9 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
                 {
                     puntuacion_jugador += 65;
                 }
+                dtg += 100 - estado.distanceToGoal(c, j);
             }
+            puntuacion_jugador += dtg;
         }
 
         // Recorro todas las fichas del oponente
@@ -1079,7 +1171,9 @@ double AIPlayer::MiValoracion1(const Parchis &estado, int jugador)
                 {
                     puntuacion_oponente += 65;
                 }
+                dtg += 100 - estado.distanceToGoal(c, j);
             }
+            puntuacion_oponente += dtg;
         }
 
         // Devuelvo la puntuación de mi jugador menos la puntuación del oponente.
@@ -1111,6 +1205,8 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador)
 
         // Recorro todas las fichas de mi jugador
         int puntuacion_jugador = 0;
+        int dtg = 0;
+
         // Recorro colores de mi jugador.
         for (int i = 0; i < my_colors.size(); i++)
         {
@@ -1118,17 +1214,9 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador)
             // Recorro las fichas de ese color.
             for (int j = 0; j < num_pieces; j++)
             {
-                // Valoro positivamente si la ficha está a 4 o menos casillas del destino.
-                if (estado.distanceToGoal(c, j) <= 4)
-                {
-                    puntuacion_jugador += 4;
-                }
-                // Valoro negativamente si la ficha rebotó en la meta en el último movimiento.
-                else if (estado.goalBounce())
-                {
-                    puntuacion_jugador -= 2;
-                }
+                dtg += 100 - estado.distanceToGoal(c, j);
             }
+            puntuacion_jugador += dtg;
         }
 
         // Recorro todas las fichas del oponente
@@ -1140,17 +1228,9 @@ double AIPlayer::MiValoracion2(const Parchis &estado, int jugador)
             // Recorro las fichas de ese color.
             for (int j = 0; j < num_pieces; j++)
             {
-                // Valoro negativamente si la ficha está a 4 o menos casillas del destino.
-                if (estado.distanceToGoal(c, j) <= 4)
-                {
-                    puntuacion_oponente += 4;
-                }
-                // Valoro positivamente si la ficha rebotó en la meta en el último movimiento.
-                else if (estado.goalBounce())
-                {
-                    puntuacion_oponente -= 2;
-                }
+                dtg += 100 - estado.distanceToGoal(c, j);
             }
+            puntuacion_oponente += dtg;
         }
 
         // Devuelvo la puntuación de mi jugador menos la puntuación del oponente.
