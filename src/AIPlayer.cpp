@@ -367,6 +367,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
         esMax = true;
     }
 
+
     color c_piece_aux = none;
     int id_piece_aux = -1;
     int dice_aux = -1;
