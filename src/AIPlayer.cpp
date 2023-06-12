@@ -357,6 +357,61 @@ double AIPlayer::ValoracionTest(const Parchis &estado, int jugador)
 
 double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristica)(const Parchis &, int)) const
 {
+    if (profundidad == profundidad_max || actual.gameOver())
+    {
+        return heuristica(actual, jugador);
+    }
+
+    bool esMax = (actual.getCurrentPlayerId() == jugador);
+    double valor = esMax ? std::numeric_limits<double>::lowest() : std::numeric_limits<double>::max();
+    color c_piece_aux = c_piece;
+    int id_piece_aux = id_piece;
+    int dice_aux = dice;
+
+    ParchisBros hijos = actual.getChildren();
+
+    for (const auto &hijo : hijos)
+    {
+        double aux_valor = Poda_AlfaBeta(hijo, jugador, profundidad + 1, profundidad_max, c_piece_aux, id_piece_aux, dice_aux, alpha, beta, heuristica);
+
+        if (esMax)
+        {
+            valor = std::max(valor, aux_valor);
+            if (valor > alpha)
+            {
+                alpha = valor;
+                c_piece = c_piece_aux;
+                id_piece = id_piece_aux;
+                dice = dice_aux;
+            }
+            if (alpha >= beta)
+            {
+                break;
+            }
+        }
+        else
+        {
+            valor = std::min(valor, aux_valor);
+            if (valor < beta)
+            {
+                beta = valor;
+                c_piece = c_piece_aux;
+                id_piece = id_piece_aux;
+                dice = dice_aux;
+            }
+            if (alpha >= beta)
+            {
+                break;
+            }
+        }
+    }
+
+    return valor;
+}
+
+/*
+double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristica)(const Parchis &, int)) const
+{
     double valor;
     double aux_valor;
     bool esMax = false;
@@ -431,6 +486,7 @@ double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundid
 
     return valor;
 }
+*/
 
 /*
 double AIPlayer::Poda_AlfaBeta(const Parchis &actual, int jugador, int profundidad, int profundidad_max, color &c_piece, int &id_piece, int &dice, double alpha, double beta, double (*heuristica)(const Parchis &, int)) const
